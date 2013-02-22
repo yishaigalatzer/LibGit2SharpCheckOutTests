@@ -357,6 +357,45 @@ namespace LibGit2Sharp.Tests
         }
 
         [Fact]
+        public void CheckoutShouldFailOnDeleteConflict()
+        {
+            // repro steps:
+            //1) Create a local repo, and push to a server (lg2# or msysgit).
+            //2) delete a file from server directly
+            //3) on local git site, make some change on the delete file, and commit the change
+            //4) pull (I use msysgit).
+            //5) branch.Checkout
+            //observed: branch succeeded
+
+            //expected: switch branch should fail since file is in conflict status in current branch.
+            //I also tried to repeat steps 1~5, and at step 6, I switch branch from cmd window,
+            // now I get error message switch branch file since there is file in conflict status.
+
+            //this issue only repros when file is deleted on server.
+
+            SelfCleaningDirectory scd = BuildSelfCleaningDirectory();
+
+            DirectoryHelper.CopyFilesRecursively(new DirectoryInfo(DeleteConflictWorkingDirPath), new DirectoryInfo(scd.DirectoryPath));
+
+            // copy files over from delete repo
+            using (var repo = new Repository(scd.DirectoryPath))
+            {
+                Assert.Equal(5, repo.Branches.Count());
+
+                var localBranches = repo.Branches.Where(branch => !branch.IsRemote);
+
+                Assert.Equal(2, localBranches.Count());
+
+                Assert.Equal("NewBranch", localBranches.Where(branch => branch.IsCurrentRepositoryHead).Single().Name);
+
+                var otherBranch = localBranches.Where(branch => !branch.IsCurrentRepositoryHead).Single();
+                Assert.Equal("master", otherBranch.Name);
+
+                Assert.Throws(typeof(Exception), () => otherBranch.Checkout());
+            }
+        }
+
+        [Fact]
         public void CheckoutRetainsUntrackedChanges()
         {
             SelfCleaningDirectory scd = BuildSelfCleaningDirectory();

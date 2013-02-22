@@ -22,6 +22,8 @@ namespace LibGit2Sharp.Tests.TestHelpers
         public static string StandardTestRepoWorkingDirPath { get; private set; }
         public static string StandardTestRepoPath { get; private set; }
         public static string MergedTestRepoWorkingDirPath { get; private set; }
+        public static string DeleteConflictWorkingDirPath { get; private set; }
+
         public static DirectoryInfo ResourcesDirectory { get; private set; }
 
         public static readonly Signature DummySignature = new Signature("Author N. Ame", "him@there.com", TruncateSubSeconds(DateTimeOffset.Now));
@@ -50,6 +52,7 @@ namespace LibGit2Sharp.Tests.TestHelpers
             StandardTestRepoWorkingDirPath = Path.Combine(ResourcesDirectory.FullName, "testrepo_wd");
             StandardTestRepoPath = Path.Combine(StandardTestRepoWorkingDirPath, ".git");
             MergedTestRepoWorkingDirPath = Path.Combine(ResourcesDirectory.FullName, "mergedrepo_wd");
+            DeleteConflictWorkingDirPath = Path.Combine(ResourcesDirectory.FullName, "delete_conflict");
 
             // The test repo under source control has its .git folder renamed to dot_git to avoid confusing git,
             // so we need to rename it back to .git in our copy under the target folder
@@ -57,6 +60,8 @@ namespace LibGit2Sharp.Tests.TestHelpers
             Directory.Move(tempDotGit, StandardTestRepoPath);
             tempDotGit = Path.Combine(MergedTestRepoWorkingDirPath, "dot_git");
             Directory.Move(tempDotGit, Path.Combine(MergedTestRepoWorkingDirPath, ".git"));
+            tempDotGit = Path.Combine(DeleteConflictWorkingDirPath, "dot_git");
+            Directory.Move(tempDotGit, Path.Combine(DeleteConflictWorkingDirPath, ".git"));
         }
 
         protected void CreateCorruptedDeadBeefHead(string repoPath)
