@@ -4,6 +4,7 @@ using LibGit2Sharp.Tests.TestHelpers;
 using Xunit;
 using Xunit.Extensions;
 using System.IO;
+using System.Text;
 
 namespace LibGit2Sharp.Tests
 {
@@ -357,6 +358,49 @@ namespace LibGit2Sharp.Tests
         }
 
         [Fact]
+        public void CheckoutShouldSucceed()
+        {
+            SelfCleaningDirectory scd = BuildSelfCleaningDirectory();
+
+            DirectoryHelper.CopyFilesRecursively(new DirectoryInfo(ExtraStatusWorkingDirPath), new DirectoryInfo(scd.DirectoryPath));
+
+            SelfCleaningDirectory toolsFolder = BuildSelfCleaningDirectory();
+
+            Directory.CreateDirectory(Path.Combine(toolsFolder.DirectoryPath, "etc"));
+
+            string text = "[core]\r\nsymlinks = false\r\nautocrlf = true";
+
+            File.WriteAllText(Path.Combine(toolsFolder.DirectoryPath, @"etc\gitconfig"), text, Encoding.ASCII);
+
+            RepositoryOptions options = new RepositoryOptions();
+
+            string systemConfigFile = Path.Combine(toolsFolder.DirectoryPath, @"etc\gitconfig");
+
+            Assert.True(File.Exists(systemConfigFile));
+
+            options.SystemConfigurationLocation = systemConfigFile;
+
+            using (var repo = new Repository(scd.DirectoryPath, options))
+            {
+                Assert.Equal(2, repo.Branches.Count());
+
+                var localBranches = repo.Branches.Where(branch => !branch.IsRemote);
+
+                Assert.Equal(2, localBranches.Count());
+
+                Assert.Equal("NewBranch", localBranches.Where(branch => branch.IsCurrentRepositoryHead).Single().Name);
+
+                var otherBranch = localBranches.Where(branch => !branch.IsCurrentRepositoryHead).Single();
+                Assert.Equal("master", otherBranch.Name);
+
+                Assert.DoesNotThrow(() => otherBranch.Checkout());
+
+                var currentBranch = repo.Branches.Where(branch => branch.IsCurrentRepositoryHead).Single();
+                Assert.Equal("master", otherBranch.Name);
+            }
+        }
+
+        [Fact]
         public void CheckoutShouldFailOnDeleteConflict()
         {
             // repro steps:
@@ -375,9 +419,9 @@ namespace LibGit2Sharp.Tests
 
             SelfCleaningDirectory scd = BuildSelfCleaningDirectory();
 
+            // copy files over from delete repo
             DirectoryHelper.CopyFilesRecursively(new DirectoryInfo(DeleteConflictWorkingDirPath), new DirectoryInfo(scd.DirectoryPath));
 
-            // copy files over from delete repo
             using (var repo = new Repository(scd.DirectoryPath))
             {
                 Assert.Equal(5, repo.Branches.Count());

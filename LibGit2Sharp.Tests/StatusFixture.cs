@@ -285,7 +285,6 @@ namespace LibGit2Sharp.Tests
 
             options.SystemConfigurationLocation = systemConfigFile;
 
-            // copy files over from delete repo
             using (var repo = new Repository(scd.DirectoryPath, options))
             {
                 Assert.Equal(0, repo.Index.RetrieveStatus().Count());
