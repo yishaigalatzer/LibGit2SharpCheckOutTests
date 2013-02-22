@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using LibGit2Sharp.Tests.TestHelpers;
 using Xunit;
 using Xunit.Extensions;
@@ -258,6 +259,36 @@ namespace LibGit2Sharp.Tests
                 File.WriteAllText(fullFilePath, "Brackets all the way.");
 
                 Assert.Throws<AmbiguousSpecificationException>(() => repo.Index.RetrieveStatus(relativePath));
+            }
+        }
+
+        [Fact]
+        public void StatusForThisRepoIsDifferentThanCLI()
+        {
+            SelfCleaningDirectory scd = BuildSelfCleaningDirectory();
+
+            DirectoryHelper.CopyFilesRecursively(new DirectoryInfo(ExtraStatusWorkingDirPath), new DirectoryInfo(scd.DirectoryPath));
+
+            SelfCleaningDirectory toolsFolder = BuildSelfCleaningDirectory();
+
+            Directory.CreateDirectory(Path.Combine(toolsFolder.DirectoryPath, "etc"));
+
+            string text = "[core]\r\nsymlinks = false\r\nautocrlf = true";
+
+            File.WriteAllText(Path.Combine(toolsFolder.DirectoryPath, @"etc\gitconfig"), text, Encoding.ASCII);
+
+            RepositoryOptions options = new RepositoryOptions();
+
+            string systemConfigFile = Path.Combine(toolsFolder.DirectoryPath, @"etc\gitconfig");
+
+            Assert.True(File.Exists(systemConfigFile));
+
+            options.SystemConfigurationLocation = systemConfigFile;
+
+            // copy files over from delete repo
+            using (var repo = new Repository(scd.DirectoryPath, options))
+            {
+                Assert.Equal(0, repo.Index.RetrieveStatus().Count());
             }
         }
 
