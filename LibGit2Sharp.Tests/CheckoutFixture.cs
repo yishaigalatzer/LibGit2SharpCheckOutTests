@@ -435,7 +435,7 @@ namespace LibGit2Sharp.Tests
                 var otherBranch = localBranches.Where(branch => !branch.IsCurrentRepositoryHead).Single();
                 Assert.Equal("master", otherBranch.Name);
 
-                Assert.Throws(typeof(Exception), () => otherBranch.Checkout());
+                Assert.Throws<MergeConflictException>(() => otherBranch.Checkout());
             }
         }
 
